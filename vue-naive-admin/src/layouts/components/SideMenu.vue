@@ -39,8 +39,19 @@ watch(route, async () => {
 })
 
 function handleMenuSelect(key, item) {
-  if (isExternal(item.path)) {
-    window.open(item.path)
+  if (isExternal(item.originPath)) {
+    $dialog.confirm({
+      type: 'info',
+      title: `请选择打开方式`,
+      positiveText: '外链打开',
+      negativeText: '在本站内嵌打开',
+      confirm() {
+        window.open(item.originPath)
+      },
+      cancel: () => {
+        router.push(item.path)
+      },
+    })
   } else {
     router.push(item.path)
   }
@@ -48,14 +59,19 @@ function handleMenuSelect(key, item) {
 </script>
 
 <style lang="scss">
-.side-menu:not(.n-menu--collapsed) {
-  .n-menu-item-content {
-    &::before {
-      left: 8px;
-      right: 8px;
-    }
-    &.n-menu-item-content--selected::before {
-      border-left: 4px solid var(--primary-color);
+.side-menu {
+  .n-menu-item-content__icon {
+    border: 1px solid rgb(229, 231, 235);
+    border-radius: 4px;
+  }
+  .n-menu-item-content--child-active,
+  .n-menu-item-content--selected {
+    .n-menu-item-content__icon {
+      border-color: var(--primary-color);
+      background-color: var(--primary-color);
+      i {
+        color: #fff;
+      }
     }
   }
 }

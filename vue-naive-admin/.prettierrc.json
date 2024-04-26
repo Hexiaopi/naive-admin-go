@@ -2,6 +2,6 @@
   "printWidth": 100,
   "singleQuote": true,
   "semi": false,
-  "endOfLine": "lf",
+  "endOfLine": "auto",
   "htmlWhitespaceSensitivity": "ignore"
 }

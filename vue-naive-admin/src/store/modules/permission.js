@@ -6,28 +6,19 @@
  * Copyright © 2023 Ronnie Zhang(大脸怪) | https://isme.top
  **********************************/
 
-import { defineStore } from 'pinia'
 import { isExternal } from '@/utils'
-import { basePermissions } from '@/settings'
-import api from '@/api'
-
-const routeComponents = import.meta.glob('@/views/**/*.vue')
+import { hyphenate } from '@vueuse/core'
+import { defineStore } from 'pinia'
 
 export const usePermissionStore = defineStore('permission', {
   state: () => ({
-    menus: [],
     accessRoutes: [],
-    asyncPermissions: [],
+    permissions: [],
+    menus: [],
   }),
-  getters: {
-    permissions() {
-      return basePermissions.concat(this.asyncPermissions)
-    },
-  },
   actions: {
-    async initPermissions() {
-      const { data } = (await api.getRolePermissions()) || []
-      this.asyncPermissions = data
+    setPermissions(permissions) {
+      this.permissions = permissions
       this.menus = this.permissions
         .filter((item) => item.type === 'MENU')
         .map((item) => this.getMenuItem(item))
@@ -36,13 +27,14 @@ export const usePermissionStore = defineStore('permission', {
     },
     getMenuItem(item, parent) {
       const route = this.generateRoute(item, item.show ? null : parent?.key)
-      if (item.enable && route.path && !isExternal(route.path)) this.accessRoutes.push(route)
+      if (item.enable && route.path && !route.path.startsWith('http')) this.accessRoutes.push(route)
       if (!item.show) return null
       const menuItem = {
         label: route.meta.title,
         key: route.name,
         path: route.path,
-        icon: () => h('i', { class: `${route.meta.icon}?mask text-16` }),
+        originPath: route.meta.originPath,
+        icon: () => h('i', { class: `${route.meta.icon} text-14` }),
         order: item.order ?? 0,
       }
       const children = item.children?.filter((item) => item.type === 'MENU') || []
@@ -56,13 +48,20 @@ export const usePermissionStore = defineStore('permission', {
       return menuItem
     },
     generateRoute(item, parentKey) {
+      let originPath = undefined
+      if (isExternal(item.path)) {
+        originPath = item.path
+        item.component = '/src/views/iframe/index.vue'
+        item.path = `/iframe/${hyphenate(item.code)}`
+      }
       return {
         name: item.code,
         path: item.path,
         redirect: item.redirect,
-        component: routeComponents[item.component] || undefined,
+        component: item.component,
         meta: {
-          icon: item.icon,
+          originPath,
+          icon: item.icon + '?mask',
           title: item.name,
           layout: item.layout,
           keepAlive: !!item.keepAlive,

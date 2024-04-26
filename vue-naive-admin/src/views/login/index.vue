@@ -17,7 +17,7 @@
 
       <div class="w-320 flex-col px-20 py-32">
         <h2 class="f-c-c text-24 text-#6a6a6a font-normal">
-          <img src="@/assets/images/logo.png" height="50" class="mr-12" />
+          <img src="@/assets/images/logo.png" class="mr-12 h-50" />
           {{ title }}
         </h2>
         <n-input
@@ -104,42 +104,29 @@
 import { throttle, lStorage } from '@/utils'
 import { useStorage } from '@vueuse/core'
 import api from './api'
-import { useUserStore, useAuthStore } from '@/store'
-import { initUserAndPermissions } from '@/router'
+import { useAuthStore } from '@/store'
 
-const userStore = useUserStore()
 const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 const title = import.meta.env.VITE_TITLE
 
-const isLogined = computed(() => {
-  return authStore.accessToken && userStore.roles
-})
-
 const loginInfo = ref({
   username: '',
   password: '',
 })
-function initLoginInfo() {
-  const localLoginInfo = lStorage.get('loginInfo')
-  if (localLoginInfo) {
-    loginInfo.value.username = localLoginInfo.username || ''
-    loginInfo.value.password = localLoginInfo.password || ''
-  }
-}
 
 const captchaUrl = ref('')
 const initCaptcha = throttle(() => {
   captchaUrl.value = '/api/auth/captcha?' + Date.now()
 }, 500)
 
-if (isLogined.value) {
-  router.push({ path: '/role-select', query: route.query })
-} else {
-  initLoginInfo()
-  initCaptcha()
+const localLoginInfo = lStorage.get('loginInfo')
+if (localLoginInfo) {
+  loginInfo.value.username = localLoginInfo.username || ''
+  loginInfo.value.password = localLoginInfo.password || ''
 }
+initCaptcha()
 
 function quickLogin() {
   loginInfo.value.username = 'admin'
@@ -179,7 +166,6 @@ async function onLoginSuccess(data = {}) {
   authStore.setToken(data)
   $message.loading('登录中...', { key: 'login' })
   try {
-    await initUserAndPermissions()
     $message.success('登录成功', { key: 'login' })
     if (route.query.redirect) {
       const path = route.query.redirect

@@ -1,12 +1,13 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"naive-admin-go/db"
 	"naive-admin-go/inout"
 	"naive-admin-go/model"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 var Permissions = &permissions{}
@@ -19,16 +20,23 @@ func (permissions) List(c *gin.Context) {
 	db.Dao.Model(model.Permission{}).Where("parentId is NULL").Order("`order` Asc").Find(&onePermissList)
 	for i, perm := range onePermissList {
 		var twoPerissList []model.Permission
-		db.Dao.Model(model.Permission{}).Where("parentId = ?", perm.ID).Order("`order` Asc").Find(&twoPerissList)
+		db.Dao.Model(model.Permission{}).Where("parentId = ?", perm.ID).Where("type = ?", "MENU").Order("`order` Asc").Find(&twoPerissList)
 		for i2, perm2 := range twoPerissList {
 			var twoPerissList2 []model.Permission
-			db.Dao.Model(model.Permission{}).Where("parentId = ?", perm2.ID).Order("`order` Asc").Find(&twoPerissList2)
+			db.Dao.Model(model.Permission{}).Where("parentId = ?", perm2.ID).Where("type = ?", "MENU").Order("`order` Asc").Find(&twoPerissList2)
 			twoPerissList[i2].Children = twoPerissList2
 		}
 		onePermissList[i].Children = twoPerissList
 	}
 
 	Resp.Succ(c, onePermissList)
+}
+
+func (permissions) ListButton(c *gin.Context) {
+	id := c.Param("id")
+	permissions := make([]model.Permission, 0)
+	db.Dao.Model(model.Permission{}).Where("parentId = ?", id).Order("`order` Asc").Find(&permissions)
+	Resp.Succ(c, permissions)
 }
 
 func (permissions) ListPage(c *gin.Context) {
@@ -64,14 +72,14 @@ func (permissions) Add(c *gin.Context) {
 		Name:      params.Name,
 		Code:      params.Code,
 		Type:      params.Type,
-		ParentId:  params.ParentId,// insert value null
+		ParentId:  params.ParentId, // insert value null
 		Path:      params.Path,
 		Icon:      params.Icon,
 		Component: params.Component,
 		Layout:    params.Layout,
 		KeepAlive: IsTrue(params.KeepAlive),
-		Show:      IsTrue(params.Show),
-		Enable:    IsTrue(params.Enable),
+		Show:      params.Show,
+		Enable:    params.Enable,
 		Order:     params.Order,
 	}).Error
 	if err != nil {
@@ -101,20 +109,20 @@ func (permissions) PatchPermission(c *gin.Context) {
 		return
 	}
 
-	err = db.Dao.Model(model.Permission{}).Where("id=?",params.Id).Updates(model.Permission{
-		Name:        params.Name,
-		Code:        params.Code,
-		Type:        params.Type,
-		ParentId:    params.ParentId,
-		Path:        params.Path,
-		Icon:        params.Icon,
-		Component:   params.Component,
-		Layout:      params.Layout,
-		KeepAlive:   params.KeepAlive,
-		Method:      params.Component,
-		Show:        params.Show,
-		Enable:      params.Enable,
-		Order:       params.Order,
+	err = db.Dao.Model(model.Permission{}).Where("id=?", params.Id).Updates(model.Permission{
+		Name:      params.Name,
+		Code:      params.Code,
+		Type:      params.Type,
+		ParentId:  params.ParentId,
+		Path:      params.Path,
+		Icon:      params.Icon,
+		Component: params.Component,
+		Layout:    params.Layout,
+		KeepAlive: params.KeepAlive,
+		Method:    params.Component,
+		Show:      params.Show,
+		Enable:    params.Enable,
+		Order:     params.Order,
 	}).Error
 	if err != nil {
 		Resp.Err(c, 20001, err.Error())

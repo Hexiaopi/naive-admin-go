@@ -17,11 +17,11 @@ type PatchUserReq struct {
 	Username *string `json:"username,omitempty"`
 }
 type PatchProfileUserReq struct {
-	Id      int    `json:"id"  binding:"required"`
-	Gender  int    `json:"gender"`
+	Id       int    `json:"id"  binding:"required"`
+	Gender   int    `json:"gender"`
 	NickName string `json:"nickName"`
-	Address string `json:"address"`
-	Email   string `json:"email"`
+	Address  string `json:"address"`
+	Email    string `json:"email"`
 }
 type EnableRoleReq struct {
 	Enable bool `json:"enable" binding:"required"`
@@ -79,8 +79,8 @@ type PatchPermissionReq struct {
 	Icon      string `json:"icon"`
 	Layout    string `json:"layout"`
 	Component string `json:"component"`
-	Show      int   `json:"show"`
-	Enable    int   `json:"enable"`
-	KeepAlive int   `json:"keepAlive"`
+	Show      bool   `json:"show"`
+	Enable    bool   `json:"enable"`
+	KeepAlive int    `json:"keepAlive"`
 	Order     int    `json:"order"`
 }

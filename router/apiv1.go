@@ -1,11 +1,12 @@
 package router
 
 import (
+	"naive-admin-go/api"
+	"naive-admin-go/middleware"
+
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
-	"naive-admin-go/api"
-	"naive-admin-go/middleware"
 )
 
 func Init(r *gin.Engine) {
@@ -42,4 +43,5 @@ func Init(r *gin.Engine) {
 	r.DELETE("/permission/:id", api.Permissions.Delete)
 	r.GET("/permission/tree", api.Permissions.List)
 	r.GET("/permission/menu/tree", api.Permissions.List)
+	r.GET("/permission/button/:id", api.Permissions.ListButton)
 }

@@ -148,7 +148,9 @@
     </div>
 
     <n-card class="mt-12" title="⚡️ 趋势" segmented>
-      <VChart :option="trendOption" :init-options="{ height: 400 }" autoresize />
+      <div class="h-400">
+        <VChart :option="trendOption" autoresize />
+      </div>
     </n-card>
   </AppPage>
 </template>

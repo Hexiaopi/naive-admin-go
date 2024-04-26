@@ -14,7 +14,7 @@ import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { NaiveUiResolver } from 'unplugin-vue-components/resolvers'
 import simpleHtmlPlugin from 'vite-plugin-simple-html'
-import VueDevTools from 'vite-plugin-vue-devtools'
+import removeNoMatch from 'vite-plugin-router-warn'
 import { pluginPagePathes, pluginIcons } from './build/plugin-isme'
 
 export default defineConfig(({ command, mode }) => {
@@ -25,7 +25,6 @@ export default defineConfig(({ command, mode }) => {
   return {
     base: VITE_PUBLIC_PATH || '/',
     plugins: [
-      VueDevTools(),
       Vue(),
       Unocss(),
       AutoImport({
@@ -48,6 +47,8 @@ export default defineConfig(({ command, mode }) => {
       pluginPagePathes(),
       // 自定义插件，用于生成自定义icon，并添加到虚拟模块
       pluginIcons(),
+      // 移除非必要的vue-router动态路由警告: No match found for location with path
+      removeNoMatch(),
     ],
     resolve: {
       alias: {
@@ -64,6 +65,7 @@ export default defineConfig(({ command, mode }) => {
           target: VITE_PROXY_TARGET,
           changeOrigin: true,
           rewrite: (path) => path.replace(new RegExp('^/api'), ''),
+          secure: false,
           configure: (proxy, options) => {
             // 配置此项可在响应头中看到请求的真实地址
             proxy.on('proxyRes', (proxyRes, req) => {

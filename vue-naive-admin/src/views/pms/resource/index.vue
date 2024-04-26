@@ -22,12 +22,7 @@
         <template v-if="currentMenu">
           <div class="flex justify-between">
             <h3 class="mb-12">{{ currentMenu.name }}</h3>
-            <n-button
-              :disabled="!currentMenu"
-              size="small"
-              type="primary"
-              @click="handleEdit(currentMenu)"
-            >
+            <n-button size="small" type="primary" @click="handleEdit(currentMenu)">
               <i class="i-material-symbols:edit-outline mr-4 text-14" />
               编辑
             </n-button>
@@ -64,6 +59,22 @@
               {{ currentMenu.order ?? '--' }}
             </n-descriptions-item>
           </n-descriptions>
+
+          <div class="mt-32 flex justify-between">
+            <h3 class="mb-12">按钮</h3>
+            <n-button size="small" type="primary" @click="handleAddBtn">
+              <i class="i-fe:plus mr-4 text-14" />
+              新增
+            </n-button>
+          </div>
+
+          <MeCrud
+            ref="$table"
+            :columns="btnsColumns"
+            :scroll-x="-1"
+            :get-data="api.getButtons"
+            :query-items="{ parentId: currentMenu.id }"
+          ></MeCrud>
         </template>
         <n-empty v-else class="h-450 f-c-c" size="large" description="请选择菜单查看详情" />
       </div>
@@ -73,13 +84,19 @@
 </template>
 
 <script setup>
+import { NButton, NSwitch } from 'naive-ui'
 import MenuTree from './components/MenuTree.vue'
 import ResAddOrEdit from './components/ResAddOrEdit.vue'
+import { MeCrud } from '@/components'
 import api from './api'
 
 const treeData = ref([])
 const treeLoading = ref(false)
 async function initData(data) {
+  if (data?.type === 'BUTTON') {
+    $table.value.handleSearch()
+    return
+  }
   treeLoading.value = true
   const res = await api.getMenuTree()
   treeData.value = res?.data || []
@@ -99,5 +116,128 @@ function handleEdit(item = {}) {
     row: item,
     okText: '保存',
   })
+}
+
+const btnsColumns = [
+  { title: '名称', key: 'name' },
+  { title: '编码', key: 'code' },
+  {
+    title: '状态',
+    key: 'enable',
+    render: (row) =>
+      h(
+        NSwitch,
+        {
+          size: 'small',
+          rubberBand: false,
+          value: row.enable,
+          loading: !!row.enableLoading,
+          onUpdateValue: () => handleEnable(row),
+        },
+        {
+          checked: () => '启用',
+          unchecked: () => '停用',
+        }
+      ),
+  },
+  {
+    title: '操作',
+    key: 'actions',
+    width: 320,
+    align: 'right',
+    fixed: 'right',
+    render(row) {
+      return [
+        h(
+          NButton,
+          {
+            size: 'small',
+            type: 'primary',
+            style: 'margin-left: 12px;',
+            onClick: () => handleEditBtn(row),
+          },
+          {
+            default: () => '编辑',
+            icon: () => h('i', { class: 'i-material-symbols:edit-outline text-14' }),
+          }
+        ),
+
+        h(
+          NButton,
+          {
+            size: 'small',
+            type: 'error',
+            style: 'margin-left: 12px;',
+            onClick: () => handleDeleteBtn(row.id),
+          },
+          {
+            default: () => '删除',
+            icon: () => h('i', { class: 'i-material-symbols:delete-outline text-14' }),
+          }
+        ),
+      ]
+    },
+  },
+]
+const $table = ref(null)
+
+watch(
+  () => currentMenu.value,
+  async (v) => {
+    await nextTick()
+    if (v) $table.value.handleSearch()
+  }
+)
+
+function handleAddBtn() {
+  modalRef.value?.handleOpen({
+    action: 'add',
+    title: '新增按钮',
+    row: { type: 'BUTTON', parentId: currentMenu.value.id },
+    okText: '保存',
+  })
+}
+
+function handleEditBtn(row) {
+  modalRef.value?.handleOpen({
+    action: 'edit',
+    title: '编辑按钮 - ' + row.name,
+    row,
+    okText: '保存',
+  })
+}
+
+function handleDeleteBtn(id) {
+  const d = $dialog.warning({
+    content: '确定删除？',
+    title: '提示',
+    positiveText: '确定',
+    negativeText: '取消',
+    async onPositiveClick() {
+      try {
+        d.loading = true
+        await api.deletePermission(id)
+        $message.success('删除成功')
+        $table.value.handleSearch()
+        d.loading = false
+      } catch (error) {
+        d.loading = false
+      }
+    },
+  })
+}
+
+async function handleEnable(item) {
+  try {
+    item.enableLoading = true
+    await api.savePermission(item.id, {
+      enable: !item.enable,
+    })
+    $message.success('操作成功')
+    $table.value?.handleSearch()
+    item.enableLoading = false
+  } catch (error) {
+    item.enableLoading = false
+  }
 }
 </script>

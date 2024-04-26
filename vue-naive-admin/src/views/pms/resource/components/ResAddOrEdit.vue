@@ -1,7 +1,7 @@
 <!--------------------------------
  - @Author: Ronnie Zhang
  - @LastEditor: Ronnie Zhang
- - @LastEditTime: 2023/12/12 09:03:43
+ - @LastEditTime: 2024/04/01 15:52:31
  - @Email: zclzone@outlook.com
  - Copyright © 2023 Ronnie Zhang(大脸怪) | https://isme.top
  --------------------------------->
@@ -20,6 +20,7 @@
           <n-tree-select
             v-model:value="modalForm.parentId"
             :options="menuOptions"
+            :disabled="parentIdDisabled"
             label-field="name"
             key-field="id"
             placeholder="根菜单"
@@ -38,13 +39,28 @@
           </template>
           <n-input v-model:value="modalForm.code" />
         </n-form-item-gi>
-        <n-form-item-gi :span="12" path="path">
+        <n-form-item-gi
+          v-if="modalForm.type === 'MENU'"
+          :span="12"
+          path="path"
+          :rule="{
+            trigger: ['blur', 'change'],
+            type: 'string',
+            message: '必须是/、http、https开头',
+            validator(rule, value) {
+              if (value) {
+                return /\/|http|https/.test(value)
+              }
+              return true
+            },
+          }"
+        >
           <template #label>
             <QuestionLabel label="路由地址" content="父级菜单可不填" />
           </template>
           <n-input v-model:value="modalForm.path" />
         </n-form-item-gi>
-        <n-form-item-gi :span="12" path="icon">
+        <n-form-item-gi v-if="modalForm.type === 'MENU'" :span="12" path="icon">
           <template #label>
             <QuestionLabel
               label="菜单图标"
@@ -53,7 +69,7 @@
           </template>
           <n-select v-model:value="modalForm.icon" :options="iconOptions" clearable filterable />
         </n-form-item-gi>
-        <n-form-item-gi :span="12" path="layout">
+        <n-form-item-gi v-if="modalForm.type === 'MENU'" :span="12" path="layout">
           <template #label>
             <QuestionLabel
               label="layout"
@@ -62,7 +78,7 @@
           </template>
           <n-select v-model:value="modalForm.layout" :options="layoutOptions" clearable />
         </n-form-item-gi>
-        <n-form-item-gi :span="24" path="component">
+        <n-form-item-gi v-if="modalForm.type === 'MENU'" :span="24" path="component">
           <template #label>
             <QuestionLabel
               label="组件路径"
@@ -78,7 +94,7 @@
           />
         </n-form-item-gi>
 
-        <n-form-item-gi :span="12" path="show">
+        <n-form-item-gi v-if="modalForm.type === 'MENU'" :span="12" path="show">
           <template #label>
             <QuestionLabel label="显示状态" content="控制是否在菜单栏显示，不影响路由注册" />
           </template>
@@ -99,7 +115,7 @@
             <template #unchecked>禁用</template>
           </n-switch>
         </n-form-item-gi>
-        <n-form-item-gi :span="12" path="enable">
+        <n-form-item-gi v-if="modalForm.type === 'MENU'" :span="12" path="keepAlive">
           <template #label>
             <QuestionLabel
               label="KeepAlive"
@@ -112,6 +128,7 @@
           </n-switch>
         </n-form-item-gi>
         <n-form-item-gi
+          v-if="modalForm.type === 'MENU'"
           :span="12"
           label="排序"
           path="order"
@@ -167,15 +184,17 @@ const required = {
   trigger: ['blur', 'change'],
 }
 
-const defaultForm = { enable: true, show: true }
-const [modalFormRef, modalForm, validation] = useForm(defaultForm)
+const defaultForm = { enable: true, show: true, layout: '' }
+const [modalFormRef, modalForm, validation] = useForm()
 const [modalRef, okLoading] = useModal()
 
 const modalAction = ref('')
+const parentIdDisabled = ref(false)
 function handleOpen(options = {}) {
   const { action, row = {}, ...rest } = options
   modalAction.value = action
-  modalForm.value = { ...row }
+  modalForm.value = { ...defaultForm, ...row }
+  parentIdDisabled.value = !!row.parentId && row.type === 'BUTTON'
   modalRef.value.open({ ...rest, onOk: onSave })
 }
 
@@ -183,15 +202,17 @@ async function onSave() {
   await validation()
   okLoading.value = true
   try {
+    let newFormData
     if (!modalForm.value.parentId) modalForm.value.parentId = null
     if (modalAction.value === 'add') {
-      await api.addPermission(modalForm.value)
+      const res = await api.addPermission(modalForm.value)
+      newFormData = res.data
     } else if (modalAction.value === 'edit') {
       await api.savePermission(modalForm.value.id, modalForm.value)
     }
     okLoading.value = false
     $message.success('保存成功')
-    emit('refresh', modalForm.value)
+    emit('refresh', modalAction.value === 'add' ? newFormData : modalForm.value)
   } catch (error) {
     console.error(error)
     okLoading.value = false

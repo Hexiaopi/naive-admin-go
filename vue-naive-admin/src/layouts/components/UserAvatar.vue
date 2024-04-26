@@ -23,7 +23,6 @@
 <script setup>
 import { useUserStore, useAuthStore, usePermissionStore } from '@/store'
 import { RoleSelect } from '@/layouts/components'
-import { initUserAndPermissions } from '@/router'
 import api from '@/api'
 
 const router = useRouter()
@@ -60,9 +59,7 @@ function handleSelect(key) {
     case 'toggleRole':
       roleSelectRef.value?.open({
         onOk() {
-          initUserAndPermissions().then(() => {
-            router.replace('/')
-          })
+          location.reload()
         },
       })
       break

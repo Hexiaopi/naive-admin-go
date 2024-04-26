@@ -1,7 +1,7 @@
 <!--------------------------------
  - @Author: Ronnie Zhang
  - @LastEditor: Ronnie Zhang
- - @LastEditTime: 2023/12/05 21:28:59
+ - @LastEditTime: 2024/04/01 15:51:34
  - @Email: zclzone@outlook.com
  - Copyright © 2023 Ronnie Zhang(大脸怪) | https://isme.top
  --------------------------------->
@@ -22,6 +22,7 @@
         :show-irrelevant-nodes="false"
         :pattern="pattern"
         :data="treeData"
+        :selected-keys="[currentMenu?.code]"
         :render-prefix="renderPrefix"
         :render-suffix="renderSuffix"
         :on-update:selected-keys="onSelect"
@@ -111,6 +112,7 @@ function handleDelete(item) {
         await api.deletePermission(item.id)
         $message.success('删除成功', { key: 'deleteMenu' })
         emit('refresh')
+        emit('update:currentMenu', null)
       } catch (error) {
         $message.destroy('deleteMenu')
       }
